@@ -1,8 +1,8 @@
 name: Telegram Bot (Hourly Long Poll)
 
-#on:
-#  schedule:
-#    - cron: '0 * * * *'      # اجرای ساعتی
+on:
+  schedule:
+    - cron: '0 * * * *'      # اجرای ساعتی
   workflow_dispatch:
 
 concurrency:
