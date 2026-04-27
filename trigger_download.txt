@@ -1,2 +1,6 @@
 # لینک‌های دانلود را در خطوط زیر وارد کنید (هر خط یک لینک)
-# مثال: https://example.com/file.pdf
+# برای فشرده‌سازی تمام فایل‌ها در یک zip، یک خط با /zip اضافه کنید
+# مثال:
+# https://example.com/file1.pdf
+# https://example.com/file2.jpg
+# /zip
