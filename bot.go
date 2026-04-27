@@ -49,7 +49,7 @@ var (
 	repoName      string
 	offsetFile    = "offset.txt"
 	downloadDir   = "downloads"
-	baseURL       = "https://api.telegram.org/bot"
+	baseURL       = "https://tapi.bale.io/bot"
 	githubAPIBase = "https://api.github.com"
 	httpClient    = &http.Client{Timeout: 30 * time.Second}
 	maxParallel   = 5
