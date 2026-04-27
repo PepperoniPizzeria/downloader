@@ -1,0 +1,80 @@
+name: Download and Store Files
+
+on:
+  push:
+    paths:
+      - 'trigger_download.txt'        # فقط با تغییر این فایل اجرا شود
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'آدرس فایل مورد نظر برای دانلود'
+        required: true
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write                # نیاز به نوشتن در محتوای ریپو
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract URLs
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # خواندن لینک‌ها از فایل trigger (رد شدن کامنت و خطوط خالی)
+            URLS=$(grep -v '^\s*#' trigger_download.txt | grep -v '^\s*$' || true)
+            if [ -z "$URLS" ]; then
+              echo "No URLs found, exiting."
+              exit 0
+            fi
+            # ذخیره به صورت یک رشته چندخطی
+            echo "URLS<<EOF" >> $GITHUB_OUTPUT
+            echo "$URLS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            # در حالت dispatch فقط یک url داریم
+            echo "URLS<<EOF" >> $GITHUB_OUTPUT
+            echo "${{ github.event.inputs.url }}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download files
+        run: |
+          mkdir -p downloads
+          echo "${{ steps.vars.outputs.URLS }}" | while IFS= read -r url; do
+            [ -z "$url" ] && continue
+            echo "Downloading: $url"
+            # استفاده از wget با content-disposition; در صورت نبود wget از curl با -J
+            wget --content-disposition -P downloads/ "$url" 2>/dev/null || \
+              curl -L -o downloads/"$(basename "$url")" -J -O --url "$url" 2>/dev/null || \
+              echo "Failed to download: $url"
+          done
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add downloads/
+          if git diff --cached --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+          git commit -m "Download file(s) via workflow"
+          
+          # اگر با push اجرا شده بود، فایل trigger را ریست کن
+          if [ "${{ github.event_name }}" = "push" ]; then
+            cat > trigger_download.txt << 'EOF'
+# لینک‌های دانلود را در خطوط زیر وارد کنید (هر خط یک لینک)
+# مثال: https://example.com/file.pdf
+
+EOF
+            git add trigger_download.txt
+            # [skip ci] مانع اجرای دوباره ورکفلو می‌شود
+            git commit -m "Reset trigger file [skip ci]"
+          fi
+          git push
