@@ -3,7 +3,6 @@ name: Telegram Bot (5min Poll)
 on:
   schedule:
     - cron: '* * * * *'
-  workflow_dispatch:
 
 concurrency:
   group: telegram-bot
